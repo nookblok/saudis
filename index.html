@@ -50,7 +50,6 @@
     padding: 0 28px;
   }
 
-  /* ---------- Nav ---------- */
   nav {
     position: sticky;
     top: 0;
@@ -79,7 +78,6 @@
   }
   .nav-links a:hover { color: var(--ink); }
 
-  /* ---------- Hero ---------- */
   .hero {
     padding: 84px 0 96px;
     position: relative;
@@ -174,7 +172,6 @@
     .hero-eyebrow, .hero h1, .hero p.lede, .hero-cta, .collage img { animation: none; }
   }
 
-  /* ---------- Facts strip ---------- */
   .facts {
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
@@ -196,7 +193,6 @@
     color: var(--gold);
   }
 
-  /* ---------- Gallery ---------- */
   .section { padding: 96px 0; }
   .section-head {
     display: flex;
@@ -222,7 +218,6 @@
   }
   .gallery img { width: 100%; }
 
-  /* ---------- Traits ---------- */
   .traits-row {
     display: flex;
     flex-wrap: wrap;
@@ -237,7 +232,6 @@
     font-size: 0.88rem;
   }
 
-  /* ---------- Mint panel ---------- */
   .mint-panel {
     border: 1px solid var(--gold-dim);
     border-radius: 10px;
@@ -265,7 +259,6 @@
     margin-bottom: 16px;
   }
 
-  /* ---------- Footer ---------- */
   footer {
     border-top: 1px solid var(--border);
     padding: 48px 0;
@@ -300,9 +293,25 @@
     .mint-status { text-align: left; }
     .nav-links { display: none; }
   }
+
+  #sand-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    pointer-events: none;
+  }
+  nav, .hero, .facts, .section, footer {
+    position: relative;
+    z-index: 2;
+  }
 </style>
 </head>
 <body>
+
+<canvas id="sand-canvas"></canvas>
 
 <nav>
   <div class="wrap">
@@ -409,6 +418,76 @@
     </div>
   </div>
 </footer>
+
+<script>
+  (function () {
+    const canvas = document.getElementById('sand-canvas');
+    const ctx = canvas.getContext('2d');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let w, h, particles;
+
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = document.documentElement.scrollHeight;
+    }
+
+    function makeParticles() {
+      const count = Math.round((w * h) / 22000);
+      particles = Array.from({ length: Math.min(count, 140) }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: Math.random() * 1.8 + 0.6,
+        speedX: 0.15 + Math.random() * 0.35,
+        speedY: -(0.05 + Math.random() * 0.15),
+        sway: Math.random() * Math.PI * 2,
+        swaySpeed: 0.002 + Math.random() * 0.004,
+        opacity: 0.15 + Math.random() * 0.35,
+      }));
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(244, 185, 66, ${p.opacity})`;
+        ctx.fill();
+      }
+    }
+
+    function step() {
+      for (const p of particles) {
+        p.sway += p.swaySpeed;
+        p.x += p.speedX + Math.sin(p.sway) * 0.25;
+        p.y += p.speedY;
+        if (p.x > w + 10) p.x = -10;
+        if (p.y < -10) p.y = h + 10;
+      }
+      draw();
+      requestAnimationFrame(step);
+    }
+
+    resize();
+    makeParticles();
+
+    if (reduceMotion) {
+      draw();
+    } else {
+      requestAnimationFrame(step);
+    }
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        resize();
+        makeParticles();
+        if (reduceMotion) draw();
+      }, 200);
+    });
+  })();
+</script>
 
 <script>
   document.getElementById('discord-link').addEventListener('click', function (e) {
